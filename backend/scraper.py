@@ -17,11 +17,10 @@ def _urlopen(url, timeout):
         return (url, exc)
 
 
-async def fetch_links(links, max_workers, timeout):
+async def fetch_links(links, max_workers, timeout, loop):
     responses = []
     with concurrent.futures.ThreadPoolExecutor(
             max_workers=max_workers) as executor:
-        loop = asyncio.get_event_loop()
         futures = [loop.run_in_executor(executor, _urlopen, link, timeout)
                    for link in links]
         for response in await asyncio.gather(*futures, return_exceptions=True):
@@ -32,7 +31,11 @@ async def fetch_links(links, max_workers, timeout):
 
 class Page:
     """Wrap the BeautifulSoup object in a more convenient API"""
-    def __init__(self, url, text, max_workers=20, timeout=5):
+    def __init__(self, url, text, max_workers=20, timeout=5, loop=None):
+        if loop:
+            self._loop = loop
+        else:
+            self._loop = asyncio.get_event_loop()
         self.url = url
         self._max_workers = max_workers
         self._timeout = 5
@@ -91,9 +94,8 @@ class Page:
         links.extend([urljoin(self.url, link) for link in self.internal_links])
         links = set(links)  # To avoid multiple checks of same url
 
-        loop = asyncio.get_event_loop()
-        responses = loop.run_until_complete(fetch_links(
-            links, self._max_workers, self._timeout))
+        responses = self._loop.run_until_complete(fetch_links(
+            links, self._max_workers, self._timeout, self._loop))
         errors = []
         for url, resp in responses:
             if isinstance(resp, Exception):
@@ -111,7 +113,7 @@ class Page:
         return False
 
 
-def scrape(url, max_workers=20, timeout=5):
+def scrape(url, max_workers=20, timeout=5, loop=None):
     """
     Scrape the given url and return a Page object or raise HTTPError
 
@@ -119,4 +121,4 @@ def scrape(url, max_workers=20, timeout=5):
     :param timeout: Timeout in seconds when fetching links
     """
     text = urlopen(url, timeout=timeout)
-    return Page(url, text, max_workers, timeout)
+    return Page(url, text, max_workers, timeout, loop)
