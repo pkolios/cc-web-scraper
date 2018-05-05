@@ -13,3 +13,4 @@ ENV/
 
 # envdir
 envdir*/
+!envdir.compose/

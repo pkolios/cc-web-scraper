@@ -1,4 +1,5 @@
 import asyncio
+import os
 from urllib.error import HTTPError
 
 import envdir
@@ -42,25 +43,26 @@ class Scraper(Resource):
     def _get_page(self, url):
         """Try cache before scraping url"""
         cache = current_app.cache
-        timeout = current_app.config.get('CACHE_TIMEOUT', 86400)
+        timeout = current_app.config.get('CACHE_TIMEOUT', '86400')
         if cache is None:
-            return scraper.scrape(url, loop=loop)
+            page = scraper.scrape(url, loop=loop)
+            return marshal(page, page_fields)
 
         cached_page = cache.get(url)
         if cached_page is None:
-            cached_page = scraper.scrape(url, loop=loop)
-            cache.set(url, cached_page, timeout=timeout)
+            page = scraper.scrape(url, loop=loop)
+            cached_page = marshal(page, page_fields)
+            cache.set(url, cached_page, timeout=int(timeout))
         return cached_page
 
     def post(self):
         args = parser.parse_args()
         try:
-            page = self._get_page(args['url'])
+            return self._get_page(args['url'])
         except ValueError as exc:
             abort(400, code='bad_url', message='Bad url')
         except HTTPError as exc:
             abort(400, code=exc.code, message=exc.msg)
-        return marshal(page, page_fields)
 
 
 def setup_cache(app):
@@ -68,15 +70,15 @@ def setup_cache(app):
     servers = app.config.get('MEMCACHED_SERVERS')
     key_prefix = app.config.get('MEMCACHED_PREFIX')
     if servers:
-        app.cache = MemcachedCache(servers=servers, key_prefix=key_prefix)
+        app.cache = MemcachedCache(servers=[servers], key_prefix=key_prefix)
+        app.cache.set('sc-test', 'sc-value')
 
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_envvar('ENVDIR', silent=True)
-    with envdir.open(app.config.get('ENVDIR')) as env:
+    with envdir.open(os.environ.get('ENVDIR')) as env:
         for key in env:
-            app.config.update(key=env[key])
+            app.config[key] = env[key]
 
     setup_cache(app)
     api = Api(app)
