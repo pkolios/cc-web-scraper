@@ -1,0 +1,14 @@
+- Plan
+    - Develop backend
+        - Use alpine python docker image
+            - Handle configuration with env vars & envdir
+        - Use pipenv for dependencies
+        - Code web page scraper
+            - Scrape with BeautifulSoup
+        - Wrap in web framework
+            - Expose POST endpoint
+            - Return JSON
+        - Cache results
+        - Setup gunicorn + supervisor
+    - Develop frontend
+        - Use appropriate docker image
