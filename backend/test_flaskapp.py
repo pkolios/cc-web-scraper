@@ -9,7 +9,7 @@ from flaskapp import create_app
 @pytest.fixture
 def app():
     app = create_app()
-    return app
+    yield app
 
 
 @pytest.fixture
@@ -51,27 +51,23 @@ def test_scraper_post_success(client):
         }
 
 
-def test_scraper_post_url_errors(client):
+def test_scraper_post_payload_errors(client):
     response = client.post('/scraper', json={})
     assert response.status_code == 400
     assert response.json == {'message': {'url': 'url cannot be blank'}}
 
-    with mock.patch('scraper.scrape') as scrape_mock:
-        scrape_mock.side_effect = HTTPError(
-            'http://example.org', 404, 'Not found', {}, mock.Mock())
-        response = client.post('/scraper', json={'url': 'http://example.org'})
-        assert response.status_code == 400
-        assert response.json == {'code': 404, 'message': 'Not found'}
 
+@pytest.mark.parametrize("exception, code, message", [
+    (HTTPError('http://example.org', 404, 'Not found', {}, mock.Mock()),
+     404, 'Not found'),
+    (HTTPError('http://example.org', 500, 'Server error', {}, mock.Mock()),
+     500, 'Server error'),
+    (ValueError(),
+     'bad_url', 'Bad url'),
+])
+def test_scraper_post_request_errors(client, exception, code, message):
     with mock.patch('scraper.scrape') as scrape_mock:
-        scrape_mock.side_effect = HTTPError(
-            'http://example.org', 500, 'Server error', {}, mock.Mock())
+        scrape_mock.side_effect = exception
         response = client.post('/scraper', json={'url': 'http://example.org'})
         assert response.status_code == 400
-        assert response.json == {'code': 500, 'message': 'Server error'}
-
-    with mock.patch('scraper.scrape') as scrape_mock:
-        scrape_mock.side_effect = ValueError()
-        response = client.post('/scraper', json={'url': 'http://example.org'})
-        assert response.status_code == 400
-        assert response.json == {'code': 'bad_url', 'message': 'Bad url'}
+        assert response.json == {'code': code, 'message': message}

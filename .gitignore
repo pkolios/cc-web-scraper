@@ -10,3 +10,6 @@ __pycache__/
 venv/
 ENV/
 .venv/
+
+# envdir
+envdir*/
