@@ -6,23 +6,23 @@ from urllib.request import urlopen
 import bs4
 
 
-def _urlopen(url):
+def _urlopen(url, timeout):
     """
     Extend urlopen to return a tuple of requested url and response
     or exception to use in futures
     """
     try:
-        return (url, urlopen(url))
+        return (url, urlopen(url, timeout=timeout))
     except Exception as exc:
         return (url, exc)
 
 
-async def fetch_links(links, max_workers):
+async def fetch_links(links, max_workers, timeout):
     responses = []
     with concurrent.futures.ThreadPoolExecutor(
             max_workers=max_workers) as executor:
         loop = asyncio.get_event_loop()
-        futures = [loop.run_in_executor(executor, _urlopen, link)
+        futures = [loop.run_in_executor(executor, _urlopen, link, timeout)
                    for link in links]
         for response in await asyncio.gather(*futures, return_exceptions=True):
             responses.append(response)
@@ -32,9 +32,10 @@ async def fetch_links(links, max_workers):
 
 class Page:
     """Wrap the BeautifulSoup object in a more convenient API"""
-    def __init__(self, url, text, max_workers=20):
+    def __init__(self, url, text, max_workers=20, timeout=5):
         self.url = url
         self._max_workers = max_workers
+        self._timeout = 5
         self._soup = bs4.BeautifulSoup(text, 'html.parser')
 
     @property
@@ -92,7 +93,7 @@ class Page:
 
         loop = asyncio.get_event_loop()
         responses = loop.run_until_complete(fetch_links(
-            links, self._max_workers))
+            links, self._max_workers, self._timeout))
         errors = []
         for url, resp in responses:
             if isinstance(resp, Exception):
@@ -110,11 +111,12 @@ class Page:
         return False
 
 
-def scrape(url, max_workers=20):
+def scrape(url, max_workers=20, timeout=5):
     """
     Scrape the given url and return a Page object or raise HTTPError
-    The max_workers parameter specifies the number of workers used
-    in the asyncio loop when fetching inaccessible links
+
+    :param max_workers: Number of workers used when fetching inaccessible links
+    :param timeout: Timeout in seconds when fetching links
     """
-    text = urlopen(url)
-    return Page(url, text, max_workers)
+    text = urlopen(url, timeout=timeout)
+    return Page(url, text, max_workers, timeout)
