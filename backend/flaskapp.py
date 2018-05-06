@@ -1,6 +1,7 @@
 import asyncio
 import os
 from urllib.error import HTTPError
+from urllib.parse import urlparse
 
 import envdir
 from flask import Flask, current_app
@@ -42,6 +43,9 @@ page_fields = {
 class Scraper(Resource):
     def _get_page(self, url):
         """Try cache before scraping url"""
+        parsed_url = urlparse(url)
+        if not parsed_url.scheme:
+            url = f'http://{url}'
         cache = current_app.cache
         timeout = current_app.config.get('CACHE_TIMEOUT', '86400')
         if cache is None:

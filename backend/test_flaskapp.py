@@ -31,7 +31,7 @@ def test_scraper_post_success(client):
             inaccessible_links=[],
             login_form=True,
         )
-        response = client.post('/scraper', json={'url': 'http://example.org'})
+        response = client.post('/scraper', json={'url': 'example.org'})
         assert response.status_code == 200
         scrape_mock.assert_called_once_with('http://example.org',
                                             loop=mock.ANY)
