@@ -1,9 +1,13 @@
 import asyncio
 import concurrent.futures
 from urllib.parse import urljoin
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import bs4
+
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'  # noqa
+}
 
 
 def _urlopen(url, timeout):
@@ -12,7 +16,8 @@ def _urlopen(url, timeout):
     or exception to use in futures
     """
     try:
-        return (url, urlopen(url, timeout=timeout))
+        req = Request(url, headers=HEADERS)
+        return (url, urlopen(req, timeout=timeout))
     except Exception as exc:
         return (url, exc)
 
@@ -120,5 +125,6 @@ def scrape(url, max_workers=20, timeout=5, loop=None):
     :param max_workers: Number of workers used when fetching inaccessible links
     :param timeout: Timeout in seconds when fetching links
     """
-    text = urlopen(url, timeout=timeout)
+    req = Request(url, headers=HEADERS)
+    text = urlopen(req, timeout=timeout)
     return Page(url, text, max_workers, timeout, loop)

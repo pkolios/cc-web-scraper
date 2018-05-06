@@ -1,6 +1,6 @@
 import asyncio
 import os
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 
 import envdir
@@ -63,10 +63,10 @@ class Scraper(Resource):
         args = parser.parse_args()
         try:
             return self._get_page(args['url'])
-        except ValueError as exc:
-            abort(400, code='bad_url', message='Bad url')
         except HTTPError as exc:
             abort(400, code=exc.code, message=exc.msg)
+        except (ValueError, URLError) as exc:
+            abort(400, code='bad_url', message='Bad url')
 
 
 def setup_cache(app):
