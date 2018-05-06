@@ -1,0 +1,67 @@
+<div class="pa4-l">
+  <form class="bg-light-red mw7 center pa4 br2-ns ba b--black-10">
+    <fieldset class="cf bn ma0 pa0">
+      <div class="cf">
+        <label class="clip" for="link-url">URL</label>
+        <input [(ngModel)]="link.url" placeholder="http://example.org" type="text" name="link-url" class="f6 f5-l input-reset bn fl black-8[] bg-white pa3 lh-solid w-100 w-75-m w-80-l br2-ns br--left-ns">
+        <input (click)="getLinkResult(link.url)" type="submit" value="Analyze" class="f6 f5-l button-reset fl pv3 tc bn bg-animate bg-black-70 hover-bg-black white pointer w-100 w-25-m w-20-l br2-ns br--right-ns">
+      </div>
+    </fieldset>
+  </form>
+  <div *ngIf="spinner" class="center pa4" style="max-width: 100" data-name="slab-stat-small">
+    <mat-spinner></mat-spinner>
+  </div>
+  <div *ngIf="error" class="mw7 center pa4" data-name="slab-stat-small">
+    <h3 class="f6 ttu tracked">Error fetching {{ resultUrl }}</h3>
+    <p>Code: {{ error.code }} </p>
+    <p>Message: {{ error.message}}</p>
+  </div>
+  <article *ngIf="linkResult" class="mw7 center pa4" data-name="slab-stat-small">
+  <h3 class="f6 ttu tracked">Results for {{ resultUrl }}</h3>
+  <div class="cf">
+    <dl class="fl fn-l w-50 dib-l w-auto-l lh-title mr5-l">
+      <dd class="f6 fw4 ml0">Title</dd>
+      <dd class="f3 fw6 ml0">{{ linkResult.title }}</dd>
+    </dl>
+    <dl class="fl fn-l w-50 dib-l w-auto-l lh-title mr5-l">
+      <dd class="f6 fw4 ml0">Html version</dd>
+      <dd class="f3 fw6 ml0">{{ linkResult.html_version }}</dd>
+    </dl>
+    <dl class="fl fn-l w-50 dib-l w-auto-l lh-title mr5-l">
+      <dd class="f6 fw4 ml0">Headings</dd>
+      <dd class="f3 fw5 ml0">
+        h1: {{ linkResult.headings.h1?.length || '0' }}
+        h2: {{ linkResult.headings.h2?.length || '0' }}
+        h3: {{ linkResult.headings.h3?.length || '0' }}
+        h4: {{ linkResult.headings.h4?.length || '0' }}
+        h5: {{ linkResult.headings.h5?.length || '0' }}
+        h6: {{ linkResult.headings.h6?.length || '0' }}
+      </dd>
+    </dl>
+    <dl class="fl fn-l w-50 dib-l w-auto-l lh-title mr5-l">
+      <dd class="f6 fw4 ml0">Internal links</dd>
+      <dd class="f3 fw6 ml0">{{ linkResult?.internal_links.length || '0' }}</dd>
+    </dl>
+    <dl class="fl fn-l w-50 dib-l w-auto-l lh-title mr5-l">
+      <dd class="f6 fw4 ml0">External links</dd>
+      <dd class="f3 fw6 ml0">{{ linkResult?.external_links.length || '0' }}</dd>
+    </dl>
+    <dl class="fl fn-l w-50 dib-l w-auto-l lh-title mr5-l">
+      <dd class="f6 fw4 ml0">Login form</dd>
+      <dd class="f3 fw6 ml0">{{ linkResult.login_form || 'false' }}</dd>
+    </dl>
+    <dl class="fl fn-l w-50 dib-l w-auto-l lh-title">
+      <dd class="f6 fw4 ml0">Inaccessible links</dd>
+      <dd class="f3 fw6 ml0">
+        <ul *ngIf="linkResult.inaccessible_links.length; else noLinks" class="list pl0">
+          <li *ngFor="let in_link of linkResult.inaccessible_links" class=f5>
+            {{ in_link.url }} <span class="f7">({{ in_link.error }})</span>
+          </li>
+        </ul>
+        <ng-template #noLinks>0</ng-template>
+      </dd>
+    </dl>
+  </div>
+</article>
+</div>
+

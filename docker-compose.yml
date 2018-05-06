@@ -3,8 +3,9 @@ version: '3'
 services:
   cache:
     image: memcached
+
   api:
-    build: .
+    build: ./backend
     command: >
       gunicorn -w 4 -b 0.0.0.0:8000
         --env ENVDIR=envdir.compose
@@ -12,10 +13,20 @@ services:
         --reload
         "flaskapp:create_app()"
     volumes:
-      - .:/usr/src/app
+      - ./backend:/usr/src/app
     ports:
       - "8000:8000"
     depends_on:
       - cache
     environment:
       PYTHONUNBUFFERED: 'true'
+
+  frontend:
+    build: ./frontend
+    command: nginx -g "daemon off;"
+    volumes:
+      - ./frontend:/usr/src/app
+    ports:
+      - "80:80"
+    depends_on:
+      - api 
